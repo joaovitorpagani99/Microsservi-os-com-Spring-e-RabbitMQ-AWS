@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.pagani.proposta_app.DTO.PropostaRequestDTO;
 import com.pagani.proposta_app.DTO.PropostaResponseDTO;
@@ -17,11 +18,13 @@ public class PropostaController {
 
 	@Autowired
 	private PropostaService propostaService;
-	
+
 	@PostMapping
 	public ResponseEntity<PropostaResponseDTO> save(@RequestBody PropostaRequestDTO requestDTO) {
 		PropostaResponseDTO response = propostaService.save(requestDTO);
-		return ResponseEntity.ok(response);
+		return ResponseEntity.created(
+				ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(response.getId()).toUri())
+				.body(response);
 	}
 
 }
