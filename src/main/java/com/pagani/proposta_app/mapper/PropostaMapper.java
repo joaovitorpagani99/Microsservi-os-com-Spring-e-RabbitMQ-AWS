@@ -1,5 +1,7 @@
 package com.pagani.proposta_app.mapper;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -31,4 +33,6 @@ public interface PropostaMapper {
 	@Mapping(target = "cpf", source = "usuario.cpf")
 	@Mapping(target = "renda", source = "usuario.renda")
 	PropostaResponseDTO convertEntityToDTO(Proposta proposta);
+	
+	List<PropostaResponseDTO> convertListEntityToListDto(Iterable<Proposta> propostas);
 }

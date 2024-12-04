@@ -1,5 +1,7 @@
 package com.pagani.proposta_app.service;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,5 +21,9 @@ public class PropostaService {
 		Proposta proposta = PropostaMapper.INSTANCE.convertDtoToProposta(requestDTO);
 		repository.save(proposta);
 		return PropostaMapper.INSTANCE.convertEntityToDTO(proposta);
+	}
+
+	public List<PropostaResponseDTO> findAll() {
+		return PropostaMapper.INSTANCE.convertListEntityToListDto(repository.findAll());
 	}
 }
