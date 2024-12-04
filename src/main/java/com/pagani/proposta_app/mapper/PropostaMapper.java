@@ -1,5 +1,6 @@
 package com.pagani.proposta_app.mapper;
 
+import java.text.NumberFormat;
 import java.util.List;
 
 import org.mapstruct.Mapper;
@@ -32,7 +33,12 @@ public interface PropostaMapper {
 	@Mapping(target = "telefone", source = "usuario.telefone")
 	@Mapping(target = "cpf", source = "usuario.cpf")
 	@Mapping(target = "renda", source = "usuario.renda")
+	@Mapping(target = "valorSolicitadoFmt", expression = "java(setValorSolicitadoFmt(proposta))")
 	PropostaResponseDTO convertEntityToDTO(Proposta proposta);
 	
 	List<PropostaResponseDTO> convertListEntityToListDto(Iterable<Proposta> propostas);
+	
+	default String setValorSolicitadoFmt(Proposta proposta) {
+		return NumberFormat.getCurrencyInstance().format(proposta.getValorSolicitado());
+	}
 }
