@@ -21,9 +21,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfiguration {
 	
-	@Value("${rabbitmq.propostapendente.exchange}")
-	private String exchange;
+	@Value("${rabbitmq.propostaconcluida.exchange}")
+	private String exchangePropostaConcluida;
 
+	@Value("${rabbitmq.propostapendente.exchange}")
+	private String exchangePropostaPendente;
 
     // Cria uma fila durável para propostas pendentes relacionadas à análise de crédito
     @Bean
@@ -64,7 +66,13 @@ public class RabbitMQConfiguration {
     // Cria uma FanoutExchange para propostas pendentes
     @Bean // Adicionado @Bean para registrar corretamente no contexto Spring
     public FanoutExchange criarFanoutExchangePropostaPendente() {
-        return ExchangeBuilder.fanoutExchange(exchange).build();
+        return ExchangeBuilder.fanoutExchange(exchangePropostaPendente).build();
+    }
+    
+    // Cria uma FanoutExchange para propostas concluida
+    @Bean // Adicionado @Bean para registrar corretamente no contexto Spring
+    public FanoutExchange criarFanoutExchangePropostaConcluida() {
+        return ExchangeBuilder.fanoutExchange(exchangePropostaConcluida).build();
     }
 
     // Cria um binding entre a fila de análise de crédito e o exchange de propostas pendentes
@@ -81,6 +89,19 @@ public class RabbitMQConfiguration {
                 .to(criarFanoutExchangePropostaPendente());
     }
     
+    @Bean
+    public Binding criarBindingPropostaConcluidaPropostaApp() {
+        return BindingBuilder.bind(criarFilaPropostaConcluidaPaganiAnaliseCredito())
+                .to(criarFanoutExchangePropostaConcluida());
+    }
+    
+    @Bean
+    public Binding criarBindingPropostaConcluidaNotificacao() {
+        return BindingBuilder.bind(criarFilaPropostaConcluidaPaganiNotificacao())
+                .to(criarFanoutExchangePropostaConcluida());
+    }
+
+
     @Bean
     public MessageConverter jackson2MessageConverter() {
     	return new Jackson2JsonMessageConverter();
