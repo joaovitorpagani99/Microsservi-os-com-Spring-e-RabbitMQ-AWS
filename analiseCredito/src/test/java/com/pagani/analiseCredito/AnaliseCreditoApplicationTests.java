@@ -1,10 +1,10 @@
-package com.pieropan.analisecredito;
+package com.pagani.analiseCredito;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AnalisecreditoApplicationTests {
+class AnaliseCreditoApplicationTests {
 
 	@Test
 	void contextLoads() {
