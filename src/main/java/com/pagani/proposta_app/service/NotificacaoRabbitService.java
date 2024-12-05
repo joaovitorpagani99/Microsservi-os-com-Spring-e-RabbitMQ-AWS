@@ -4,15 +4,15 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.pagani.proposta_app.DTO.PropostaResponseDTO;
+import com.pagani.proposta_app.entity.Proposta;
 
 @Service
-public class NotificacaoService {
+public class NotificacaoRabbitService {
 
 	@Autowired
 	private RabbitTemplate rabbitTemplate;
 	
-	public void notificar(PropostaResponseDTO proposta, String exchange) {
+	public void notificar(Proposta proposta, String exchange) {
 		rabbitTemplate.convertAndSend(exchange,"", proposta);
 	}
 }

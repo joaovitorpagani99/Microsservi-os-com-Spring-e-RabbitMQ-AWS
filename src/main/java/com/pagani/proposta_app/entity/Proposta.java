@@ -1,5 +1,7 @@
 package com.pagani.proposta_app.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -33,5 +35,6 @@ public class Proposta {
 	
 	@OneToOne(cascade = CascadeType.PERSIST)
 	@JoinColumn(name = "id_usuario")
+	@JsonManagedReference
 	private Usuario usuario;
 }

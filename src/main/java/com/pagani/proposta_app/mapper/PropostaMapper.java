@@ -23,7 +23,7 @@ public interface PropostaMapper {
 	@Mapping(target = "usuario.renda", source = "renda")
 	@Mapping(target = "id" , ignore = true)
 	@Mapping(target = "aprovada" , ignore = true)
-	@Mapping(target = "integrada" , ignore = true)
+	@Mapping(target = "integrada" , constant = "true")
 	@Mapping(target = "observacao" , ignore = true)
 	Proposta convertDtoToProposta(PropostaRequestDTO propostaRequestDto);
 	
@@ -37,7 +37,7 @@ public interface PropostaMapper {
 	PropostaResponseDTO convertEntityToDTO(Proposta proposta);
 	
 	List<PropostaResponseDTO> convertListEntityToListDto(Iterable<Proposta> propostas);
-	
+
 	default String setValorSolicitadoFmt(Proposta proposta) {
 		return NumberFormat.getCurrencyInstance().format(proposta.getValorSolicitado());
 	}
