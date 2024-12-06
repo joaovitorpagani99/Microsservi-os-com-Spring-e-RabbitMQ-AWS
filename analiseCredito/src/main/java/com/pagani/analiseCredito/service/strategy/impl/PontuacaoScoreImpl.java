@@ -2,11 +2,13 @@ package com.pagani.analiseCredito.service.strategy.impl;
 
 import java.util.Random;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import com.pagani.analiseCredito.Domain.Proposta;
 import com.pagani.analiseCredito.service.strategy.CalculoPonto;
 
+@Order(2)
 @Component
 public class PontuacaoScoreImpl implements CalculoPonto {
 
