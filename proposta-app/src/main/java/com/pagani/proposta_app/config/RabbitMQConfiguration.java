@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -20,115 +21,106 @@ import org.springframework.context.annotation.Configuration;
 // Define que esta classe contém configurações do RabbitMQ
 @Configuration
 public class RabbitMQConfiguration {
-	
-	@Value("${rabbitmq.propostaconcluida.exchange}")
-	private String exchangePropostaConcluida;
 
-	@Value("${rabbitmq.propostapendente.exchange}")
-	private String exchangePropostaPendente;
+    @Value("${rabbitmq.propostapendente.exchange}")
+    private String exchangePropostaPendente;
 
-    // Cria uma fila durável para propostas pendentes relacionadas à análise de crédito
+    @Value("${rabbitmq.propostaconcluida.exchange}")
+    private String exchangePropostaConcluida;
+
     @Bean
-    Queue criarFilaPropostaPendentePaganiAnaliseCredito() {
-        return QueueBuilder.durable("proposta-pendente.pagani-credito").build();
+    public Queue criarFilaPropostaPendenteMsAnaliseCredito() {
+        return QueueBuilder.durable("proposta-pendente.ms-analise-credito")
+                .deadLetterExchange("proposta-pendente-dlx.ex")
+                .maxPriority(10)
+                .build();
     }
 
-    // Cria uma fila durável para propostas pendentes relacionadas à notificação
     @Bean
-    Queue criarFilaPropostaPendentePaganiNotificacao() {
-        return QueueBuilder.durable("proposta-pendente.pagani-notificacao").build();
+    public Queue criarFilaPropostaPendenteDlq() {
+        return QueueBuilder.durable("proposta-pendente.dlq").build();
     }
 
-    // Cria uma fila durável para propostas concluídas relacionadas à análise de crédito
     @Bean
-    Queue criarFilaPropostaConcluidaPaganiAnaliseCredito() {
-        return QueueBuilder.durable("proposta-concluida.pagani-credito").build();
+    public FanoutExchange deadLetterExchange() {
+        return ExchangeBuilder.fanoutExchange("proposta-pendente-dlx.ex").build();
     }
 
-    // Cria uma fila durável para propostas concluídas relacionadas à notificação
     @Bean
-    Queue criarFilaPropostaConcluidaPaganiNotificacao() {
-        return QueueBuilder.durable("proposta-concluida.pagani-notificacao").build();
+    public Binding criarBinding(){
+        return BindingBuilder.bind(criarFilaPropostaPendenteDlq()).to(deadLetterExchange());
     }
 
-    // Cria um RabbitAdmin para gerenciar a configuração do RabbitMQ
+    @Bean
+    public Queue criarFilaPropostaPendenteMsNotificacao() {
+        return QueueBuilder.durable("proposta-pendente.ms-notificacao").build();
+    }
+
+    @Bean
+    public Queue criarFilaPropostaConcluidaMsProposta() {
+        return QueueBuilder.durable("proposta-concluida.ms-proposta").build();
+    }
+
+    @Bean
+    public Queue criarFilaPropostaConcluidaMsNotificacao() {
+        return QueueBuilder.durable("proposta-concluida.ms-notificacao").build();
+    }
+
     @Bean
     public RabbitAdmin criarRabbitAdmin(ConnectionFactory connectionFactory) {
         return new RabbitAdmin(connectionFactory);
     }
 
-    // Inicializa o RabbitAdmin quando a aplicação é iniciada
     @Bean
-    public ApplicationListener<ApplicationEvent> inicializarAdmin(RabbitAdmin rabbitAdmin) {
+    public ApplicationListener<ApplicationReadyEvent> inicializarAdmin(RabbitAdmin rabbitAdmin) {
         return event -> rabbitAdmin.initialize();
     }
 
-    // Cria uma FanoutExchange para propostas pendentes
-    @Bean // Adicionado @Bean para registrar corretamente no contexto Spring
+    @Bean
     public FanoutExchange criarFanoutExchangePropostaPendente() {
         return ExchangeBuilder.fanoutExchange(exchangePropostaPendente).build();
     }
-    
-    // Cria uma FanoutExchange para propostas concluida
-    @Bean // Adicionado @Bean para registrar corretamente no contexto Spring
+
+    @Bean
     public FanoutExchange criarFanoutExchangePropostaConcluida() {
         return ExchangeBuilder.fanoutExchange(exchangePropostaConcluida).build();
     }
 
-    // Cria um binding entre a fila de análise de crédito e o exchange de propostas pendentes
     @Bean
-    public Binding criarBindingPropostaPendenteAnaliseCredito() {
-        return BindingBuilder.bind(criarFilaPropostaPendentePaganiAnaliseCredito())
-                .to(criarFanoutExchangePropostaPendente());
+    public Binding criarBindingPropostaPendenteMSAnaliseCredito() {
+        return BindingBuilder.bind(criarFilaPropostaPendenteMsAnaliseCredito()).
+                to(criarFanoutExchangePropostaPendente());
     }
 
-    // Cria um binding entre a fila de notificação e o exchange de propostas pendentes
     @Bean
-    public Binding criarBindingPropostaPendenteNotificacao() {
-        return BindingBuilder.bind(criarFilaPropostaPendentePaganiNotificacao())
-                .to(criarFanoutExchangePropostaPendente());
-    }
-    
-    @Bean
-    public Binding criarBindingPropostaConcluidaPropostaApp() {
-        return BindingBuilder.bind(criarFilaPropostaConcluidaPaganiAnaliseCredito())
-                .to(criarFanoutExchangePropostaConcluida());
-    }
-    
-    @Bean
-    public Binding criarBindingPropostaConcluidaNotificacao() {
-        return BindingBuilder.bind(criarFilaPropostaConcluidaPaganiNotificacao())
-                .to(criarFanoutExchangePropostaConcluida());
+    public Binding criarBindingPropostaPendenteMSNotificacao() {
+        return BindingBuilder.bind(criarFilaPropostaPendenteMsNotificacao()).
+                to(criarFanoutExchangePropostaPendente());
     }
 
+    @Bean
+    public Binding criarBindingPropostaConcluidaMSPropostaApp() {
+        return BindingBuilder.bind(criarFilaPropostaConcluidaMsProposta()).
+                to(criarFanoutExchangePropostaConcluida());
+    }
 
     @Bean
-    public MessageConverter jackson2MessageConverter() {
-    	return new Jackson2JsonMessageConverter();
+    public Binding criarBindingPropostaConcluidaMSNotificacao() {
+        return BindingBuilder.bind(criarFilaPropostaConcluidaMsNotificacao()).
+                to(criarFanoutExchangePropostaConcluida());
     }
-    
+
+    @Bean
+    public MessageConverter jackson2JsonMessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
-    	RabbitTemplate rabbitTemplate = new RabbitTemplate();
-    	rabbitTemplate.setConnectionFactory(connectionFactory);
-    	rabbitTemplate.setMessageConverter(jackson2MessageConverter());
-    	return rabbitTemplate;
+        RabbitTemplate rabbitTemplate = new RabbitTemplate();
+        rabbitTemplate.setConnectionFactory(connectionFactory);
+        rabbitTemplate.setMessageConverter(jackson2JsonMessageConverter());
+
+        return rabbitTemplate;
     }
-    
-  
-    
-    
-    
-    
-    
-     
-    
-    
-    
-    
-    
-    
-    
-    
-    
 }

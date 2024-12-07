@@ -2,6 +2,7 @@ package com.pagani.proposta_app.service;
 
 import java.util.List;
 
+import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -29,13 +30,19 @@ public class PropostaService {
 	public PropostaResponseDTO save(PropostaRequestDTO requestDTO) {
 		Proposta proposta = PropostaMapper.INSTANCE.convertDtoToProposta(requestDTO);
 		repository.save(proposta);
-		notificarRabbitMQ(proposta);
+		int prioridade = proposta.getUsuario().getRenda() > 1000 ? 10 : 5;
+		MessagePostProcessor messagePostProcessor = message -> {
+			message.getMessageProperties().setPriority(prioridade);
+			return message;
+		};
+		
+		notificarRabbitMQ(proposta, messagePostProcessor);
 		return PropostaMapper.INSTANCE.convertEntityToDTO(proposta);
 	}
 
-	private void notificarRabbitMQ(Proposta proposta) {
+	private void notificarRabbitMQ(Proposta proposta, MessagePostProcessor messagePostProcessor) {
 		try {
-			notificacaoService.notificar(proposta, "proposta-pendente.ex");
+			notificacaoService.notificar(proposta, exchange, messagePostProcessor);
 		} catch (RuntimeException e) {
 			proposta.setIntegrada(false);
 			repository.save(proposta);
